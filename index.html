@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Digital Clock</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0a0a1a;
+      font-family: 'Rajdhani', sans-serif;
+      overflow: hidden;
+    }
+
+    /* Animated background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 60% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
+      animation: bgShift 12s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    @keyframes bgShift {
+      0%   { opacity: 1; filter: hue-rotate(0deg); }
+      100% { opacity: 1; filter: hue-rotate(30deg); }
+    }
+
+    /* Grid lines overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+
+    .clock-wrapper {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      z-index: 1;
+    }
+
+    /* Outer glow ring */
+    .clock-card {
+      position: relative;
+      padding: 3rem 4rem;
+      border-radius: 2rem;
+      background: rgba(15, 15, 35, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      box-shadow:
+        0 0 0 1px rgba(99, 102, 241, 0.1),
+        0 25px 60px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255,255,255,0.07);
+    }
+
+    .clock-card::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 2.1rem;
+      background: linear-gradient(135deg, rgba(99,102,241,0.5), rgba(16,185,129,0.3), rgba(236,72,153,0.3));
+      z-index: -1;
+      animation: borderGlow 4s linear infinite;
+      background-size: 200% 200%;
+    }
+
+    @keyframes borderGlow {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Date display */
+    .date-display {
+      text-align: center;
+      letter-spacing: 0.15em;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: rgba(99, 102, 241, 0.8);
+      text-transform: uppercase;
+    }
+
+    /* Time digits */
+    .time-display {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-family: 'Orbitron', monospace;
+    }
+
+    .time-segment {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .digit-group {
+      display: flex;
+      gap: 0.15rem;
+    }
+
+    .digit {
+      position: relative;
+      width: 72px;
+      height: 108px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 5rem;
+      font-weight: 900;
+      color: #e8e8ff;
+      text-shadow:
+        0 0 20px rgba(99, 102, 241, 0.9),
+        0 0 40px rgba(99, 102, 241, 0.5),
+        0 0 80px rgba(99, 102, 241, 0.2);
+      background: rgba(99, 102, 241, 0.06);
+      border-radius: 0.6rem;
+      border: 1px solid rgba(99, 102, 241, 0.15);
+      transition: text-shadow 0.1s ease;
+    }
+
+    .digit.pulse {
+      animation: digitPulse 0.15s ease-out;
+    }
+
+    @keyframes digitPulse {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.05); text-shadow: 0 0 30px rgba(99,102,241,1), 0 0 60px rgba(99,102,241,0.7); }
+      100% { transform: scale(1); }
+    }
+
+    /* Scanline effect on digits */
+    .digit::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0,0,0,0.08) 3px,
+        rgba(0,0,0,0.08) 4px
+      );
+      border-radius: 0.6rem;
+      pointer-events: none;
+    }
+
+    .segment-label {
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.25em;
+      color: rgba(99, 102, 241, 0.5);
+      text-transform: uppercase;
+    }
+
+    /* Colon separator */
+    .colon {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 0 4px;
+      padding-bottom: 22px;
+      align-self: center;
+    }
+
+    .colon-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(99, 102, 241, 0.9);
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.8), 0 0 24px rgba(99, 102, 241, 0.4);
+      animation: blinkDot 1s step-start infinite;
+    }
+
+    @keyframes blinkDot {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.15; }
+    }
+
+    /* AM/PM + seconds row */
+    .bottom-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 0 0.25rem;
+      margin-top: 0.5rem;
+    }
+
+    .ampm-badge {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: #0a0a1a;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      padding: 4px 12px;
+      border-radius: 4px;
+      box-shadow: 0 0 12px rgba(99,102,241,0.5);
+    }
+
+    .seconds-display {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+    }
+
+    .seconds-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      color: rgba(99,102,241,0.5);
+      text-transform: uppercase;
+    }
+
+    .seconds-value {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: rgba(16, 185, 129, 0.95);
+      text-shadow: 0 0 16px rgba(16,185,129,0.7);
+    }
+
+    /* Progress bar for seconds */
+    .seconds-bar-container {
+      width: 100%;
+      height: 3px;
+      background: rgba(99,102,241,0.12);
+      border-radius: 2px;
+      margin-top: 1rem;
+      overflow: hidden;
+    }
+
+    .seconds-bar {
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, #6366f1, #10b981);
+      box-shadow: 0 0 8px rgba(99,102,241,0.6);
+      transition: width 1s linear;
+    }
+
+    /* Timezone info */
+    .timezone-info {
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      color: rgba(255,255,255,0.25);
+      text-align: center;
+    }
+
+    /* Responsive */
+    @media (max-width: 540px) {
+      .clock-card {
+        padding: 2rem 1.75rem;
+        border-radius: 1.5rem;
+      }
+
+      .digit {
+        width: 48px;
+        height: 76px;
+        font-size: 3.4rem;
+      }
+
+      .colon-dot {
+        width: 6px;
+        height: 6px;
+      }
+
+      .seconds-value {
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="clock-wrapper">
+    <div class="clock-card">
+
+      <!-- Date -->
+      <div class="date-display" id="dateDisplay">Loading...</div>
+
+      <!-- Main time -->
+      <div class="time-display" style="margin-top: 1.25rem;">
+
+        <!-- Hours -->
+        <div class="time-segment">
+          <div class="digit-group">
+            <div class="digit" id="h1">0</div>
+            <div class="digit" id="h2">0</div>
+          </div>
+          <span class="segment-label">Hours</span>
+        </div>
+
+        <!-- Colon -->
+        <div class="colon">
+          <div class="colon-dot"></div>
+          <div class="colon-dot"></div>
+        </div>
+
+        <!-- Minutes -->
+        <div class="time-segment">
+          <div class="digit-group">
+            <div class="digit" id="m1">0</div>
+            <div class="digit" id="m2">0</div>
+          </div>
+          <span class="segment-label">Minutes</span>
+        </div>
+
+      </div>
+
+      <!-- AM/PM + Seconds -->
+      <div class="bottom-row">
+        <div class="ampm-badge" id="ampmBadge">AM</div>
+        <div class="seconds-display">
+          <span class="seconds-label">Seconds</span>
+          <span class="seconds-value" id="secondsValue">00</span>
+        </div>
+      </div>
+
+      <!-- Seconds progress bar -->
+      <div class="seconds-bar-container">
+        <div class="seconds-bar" id="secondsBar" style="width: 0%;"></div>
+      </div>
+
+    </div>
+
+    <!-- Timezone -->
+    <div class="timezone-info" id="timezoneInfo">—</div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
